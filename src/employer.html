@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Jobs - Không gian Nhà tuyển dụng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534',
+                            900: '#14532d', 950: '#064e3b',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased h-screen overflow-hidden flex" x-data="employerApp()" x-init="init()">
+
+    <!-- Toast Notification -->
+    <div x-show="notification.show" x-transition
+         class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm border border-slate-700" x-cloak>
+        <i class="fa-solid fa-circle-check text-brand-500 text-lg"></i>
+        <span x-text="notification.message"></span>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-64 h-full bg-brand-950 text-white flex flex-col justify-between shrink-0 select-none shadow-xl border-r border-brand-900/40">
+        <div class="overflow-y-auto">
+            <div class="px-6 py-6 flex items-center space-x-3 border-b border-brand-900/50">
+                <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-md">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-white">Jobs</span>
+                    <span class="block text-[10px] text-brand-400 tracking-wider font-semibold uppercase">Employer Portal</span>
+                </div>
+            </div>
+
+            <div class="px-6 pt-6 pb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-400">Quản lý Tuyển dụng</span>
+            </div>
+
+            <nav class="px-3 space-y-1">
+                <button @click="activeTab = 'emp_overview'" :class="activeTab === 'emp_overview' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span>Tổng quan</span>
+                </button>
+                <button @click="activeTab = 'emp_post'" :class="activeTab === 'emp_post' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-circle-plus w-5 text-center"></i>
+                    <span>Đăng tin</span>
+                </button>
+                <button @click="activeTab = 'emp_manage'" :class="activeTab === 'emp_manage' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-list-check w-5 text-center"></i>
+                    <span>Quản lý tin</span>
+                </button>
+                <button @click="activeTab = 'emp_candidates'" :class="activeTab === 'emp_candidates' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-users w-5 text-center"></i>
+                    <span>Ứng viên</span>
+                </button>
+                <button @click="activeTab = 'emp_profile'" :class="activeTab === 'emp_profile' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-building w-5 text-center"></i>
+                    <span>Hồ sơ công ty</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-brand-900/60 bg-brand-950 shrink-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm shadow shrink-0">
+                        <span x-text="currentUser.initials"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-white truncate" x-text="currentUser.name"></p>
+                        <p class="text-xs text-brand-200/80 truncate" x-text="currentUser.email"></p>
+                    </div>
+                </div>
+                <button @click="logout()" title="Đăng xuất" class="text-white/80 hover:text-rose-400 p-2 rounded-lg hover:bg-brand-900/50 transition shrink-0">
+                    <i class="fa-solid fa-right-from-bracket text-base"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <!-- TOP HEADER -->
+        <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 shadow-sm">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider" x-text="currentLoginTime"></p>
+                <h1 class="text-lg font-bold text-slate-900" x-text="getHeaderTitle()"></h1>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center space-x-2 bg-blue-50 border border-blue-200 px-3.5 py-1.5 rounded-xl text-xs font-bold text-blue-800">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span>Nhà tuyển dụng</span>
+                </div>
+
+                <button @click="notify('Không có thông báo mới')" class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-brand-600 rounded-full"></span>
+                </button>
+
+                <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-300 flex items-center justify-center font-bold text-blue-900 text-sm shadow-sm">
+                    <span x-text="currentUser.initials"></span>
+                </div>
+
+                <button @click="logout()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200 hover:border-rose-200">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden md:inline">Đăng xuất</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- DYNAMIC BODY CONTENT -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- 1. TỔNG QUAN -->
+            <template x-if="activeTab === 'emp_overview'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">NHÀ TUYỂN DỤNG</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Tổng quan tuyển dụng</h2>
+                            <p class="text-slate-600 text-sm">Theo dõi hiệu quả các tin tuyển dụng gần đây.</p>
+                        </div>
+                        <button @click="activeTab = 'emp_post'" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition flex items-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Đăng việc mới</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-lg mb-4">
+                                <i class="fa-solid fa-briefcase"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Tin đang mở</span>
+                            <h3 class="text-3xl font-black text-slate-900 mt-1">12</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg mb-4">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Tổng ứng viên</span>
+                            <h3 class="text-3xl font-black text-slate-900 mt-1">86</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg mb-4">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Chờ xét duyệt</span>
+                            <h3 class="text-3xl font-black text-slate-900 mt-1">18</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg mb-4">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Đã tuyển</span>
+                            <h3 class="text-3xl font-black text-slate-900 mt-1">9</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-slate-900">Tin tuyển dụng gần đây</h3>
+                            <button @click="activeTab = 'emp_manage'" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Xem tất cả</button>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+                            <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Product Design Intern</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">Đăng ngày 26/05/2025</p>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">OPEN</span>
+                                    <span class="text-xs text-slate-600 font-medium">12 ứng viên</span>
+                                    <button @click="activeTab = 'emp_candidates'" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">Xem ứng viên</button>
+                                </div>
+                            </div>
+                            <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Frontend Developer Intern</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">Đăng ngày 24/05/2025</p>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">FILLED</span>
+                                    <span class="text-xs text-slate-600 font-medium">24 ứng viên</span>
+                                    <button @click="activeTab = 'emp_candidates'" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">Xem ứng viên</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 2. ĐĂNG TIN -->
+            <template x-if="activeTab === 'emp_post'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">TIN TUYỂN DỤNG</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Đăng công việc mới</h2>
+                            <p class="text-slate-600 text-sm">Cung cấp thông tin rõ ràng để tiếp cận ứng viên phù hợp.</p>
+                        </div>
+                        <button @click="notify('Đăng tin tuyển dụng thành công!')" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition">Đăng tin ngay</button>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 pb-4 border-b border-slate-100">Thông tin cơ bản</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tiêu đề công việc</label>
+                                <input type="text" placeholder="Ví dụ: UI/UX Design Intern" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Ngành nghề</label>
+                                <input type="text" placeholder="Thiết kế" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Địa điểm</label>
+                                <input type="text" placeholder="Quận 1, TP.HCM / Remote" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hình thức trả lương</label>
+                                <input type="text" placeholder="Theo giờ / Theo tháng" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mức lương</label>
+                                <input type="text" placeholder="6.000.000 – 8.000.000đ" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-slate-100">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mô tả chi tiết</label>
+                            <textarea rows="5" placeholder="Nhiệm vụ, yêu cầu và quyền lợi..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-brand-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 3. QUẢN LÝ TIN -->
+            <template x-if="activeTab === 'emp_manage'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">QUẢN LÝ TUYỂN DỤNG</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Bài đăng của bạn</h2>
+                            <p class="text-slate-600 text-sm">Cập nhật và quản lý trạng thái tuyển dụng.</p>
+                        </div>
+                        <button @click="activeTab = 'emp_post'" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition">+ Đăng tin mới</button>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 divide-y divide-slate-100">
+                        <div class="py-4 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-900">Product Design Intern</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Đăng ngày 26/05/2025</p>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">OPEN</span>
+                                <span class="text-xs text-slate-600 font-medium">12 ứng viên</span>
+                                <button @click="activeTab = 'emp_candidates'" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200">Xem ứng viên</button>
+                            </div>
+                        </div>
+                        <div class="py-4 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-900">Frontend Developer Intern</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Đăng ngày 24/05/2025</p>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">FILLED</span>
+                                <span class="text-xs text-slate-600 font-medium">24 ứng viên</span>
+                                <button @click="activeTab = 'emp_candidates'" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200">Xem ứng viên</button>
+                            </div>
+                        </div>
+                        <div class="py-4 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-900">Gia sư Tiếng Anh</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Đăng ngày 10/05/2025</p>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">CLOSED</span>
+                                <span class="text-xs text-slate-600 font-medium">7 ứng viên</span>
+                                <button @click="activeTab = 'emp_candidates'" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200">Xem ứng viên</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 4. ỨNG VIÊN -->
+            <template x-if="activeTab === 'emp_candidates'">
+                <div class="space-y-8">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">ỨNG VIÊN</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900">Danh sách ứng viên</h2>
+                        <p class="text-slate-600 text-sm">Product Design Intern · 12 hồ sơ</p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 divide-y divide-slate-100">
+                        <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">GH</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Trần Gia Hân</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">Figma · UI Design</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm font-bold text-amber-600"><i class="fa-solid fa-star text-xs"></i> 4.9</span>
+                                <span class="text-xs text-slate-500">Đang xét duyệt</span>
+                                <button @click="notify('Đang mở xem CV ứng viên...')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">Xem CV</button>
+                                <button @click="notify('Đã duyệt ứng viên!')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold">Duyệt</button>
+                                <button @click="notify('Đã từ chối ứng viên')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold">Từ chối</button>
+                            </div>
+                        </div>
+
+                        <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">HN</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Lê Hoàng Nam</h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">Research · Prototype</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm font-bold text-amber-600"><i class="fa-solid fa-star text-xs"></i> 4.7</span>
+                                <span class="text-xs text-emerald-600 font-semibold">Đã duyệt</span>
+                                <button @click="notify('Đang mở xem CV ứng viên...')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">Xem CV</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 5. HỒ SƠ CÔNG TY -->
+            <template x-if="activeTab === 'emp_profile'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">HỒ SƠ DOANH NGHIỆP</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Hồ sơ nhà tuyển dụng</h2>
+                            <p class="text-slate-600 text-sm">Thông tin đầy đủ giúp bạn tạo dựng niềm tin trong cộng đồng.</p>
+                        </div>
+                        <button @click="notify('Đã lưu thay đổi hồ sơ công ty!')" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition">Lưu thay đổi</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div class="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-6">
+                            <div class="w-32 h-32 rounded-3xl bg-blue-600 text-white flex items-center justify-center font-bold text-4xl mx-auto shadow-md">NL</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Nexus Labs</h3>
+                                <span class="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mt-2">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>Đã xác minh</span>
+                                </span>
+                            </div>
+                            <button @click="notify('Tải logo mới thành công!')" class="w-full py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition">Thay đổi Logo</button>
+                        </div>
+
+                        <div class="lg:col-span-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tên công ty</label>
+                                    <input type="text" value="Nexus Labs" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Email liên hệ</label>
+                                    <input type="email" x-model="currentUser.email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Số điện thoại</label>
+                                    <input type="text" value="0901 234 567" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Địa chỉ</label>
+                                    <input type="text" value="Quận 1, TP. Hồ Chí Minh" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mô tả công ty</label>
+                                <textarea rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-brand-500">Môi trường sáng tạo dành cho tài năng trẻ.</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </main>
+    </div>
+
+    <script>
+        function employerApp() {
+            return {
+                activeTab: 'emp_overview',
+                currentLoginTime: '',
+                currentUser: { name: 'Minh Thuận', sub: 'Nexus Labs · NTD', email: 'thuan@vlu.edu.vn', initials: 'MT' },
+                notification: { show: false, message: '' },
+
+                init() {
+                    const saved = localStorage.getItem('orbit_current_user');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.role === 'employer') this.currentUser = parsed;
+                    }
+                    const now = new Date();
+                    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                    this.currentLoginTime = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} - ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+                },
+                getHeaderTitle() {
+                    const titles = {
+                        emp_overview: 'Tổng quan',
+                        emp_post: 'Đăng tin',
+                        emp_manage: 'Quản lý tin',
+                        emp_candidates: 'Ứng viên',
+                        emp_profile: 'Hồ sơ công ty'
+                    };
+                    return titles[this.activeTab] || 'Orbit Jobs';
+                },
+                notify(msg) {
+                    this.notification.message = msg;
+                    this.notification.show = true;
+                    setTimeout(() => { this.notification.show = false; }, 3000);
+                },
+                logout() {
+                    localStorage.removeItem('orbit_current_user');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

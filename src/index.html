@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Jobs - Đăng nhập & Đăng ký</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534',
+                            900: '#14532d', 950: '#064e3b',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-brand-950 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4 overflow-y-auto" x-data="authApp()">
+
+    <!-- Background Decoration -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div class="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-brand-500 blur-3xl"></div>
+        <div class="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-emerald-400 blur-3xl"></div>
+    </div>
+
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 md:p-10 shadow-2xl relative z-10 border border-slate-100 my-8">
+        <!-- Logo -->
+        <div class="flex items-center justify-center space-x-3 mb-6">
+            <div class="w-11 h-11 rounded-2xl bg-brand-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-md">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+                <span class="text-2xl font-extrabold tracking-tight text-slate-900">Jobs</span>
+                <span class="block text-[10px] text-brand-600 tracking-wider font-bold uppercase">Orbit Platform</span>
+            </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="grid grid-cols-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
+            <button type="button" @click="authMode = 'login'; loginError = ''; registerError = ''"
+                    :class="authMode === 'login' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'"
+                    class="py-2.5 text-xs rounded-xl transition">
+                Đăng nhập
+            </button>
+            <button type="button" @click="authMode = 'register'; loginError = ''; registerError = ''"
+                    :class="authMode === 'register' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'"
+                    class="py-2.5 text-xs rounded-xl transition">
+                Đăng ký tài khoản
+            </button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <template x-if="authMode === 'login'">
+            <div>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Chào mừng trở lại!</h2>
+                    <p class="text-sm text-slate-500 mt-1">Đăng nhập vào không gian làm việc của bạn</p>
+                </div>
+
+                <form @submit.prevent="login()" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Email đăng nhập</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="email" x-model="loginEmail" required placeholder="Nhập email (@vlu.edu.vn)..."
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Mật khẩu</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="password" x-model="loginPassword" required placeholder="••••••••"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <div x-show="loginError" x-transition class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-2" x-cloak>
+                        <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
+                        <span x-text="loginError"></span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/20 transition flex items-center justify-center space-x-2 text-sm">
+                        <span>Đăng nhập</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-xs text-slate-500 mt-5">
+                    Chưa có tài khoản?
+                    <button type="button" @click="authMode = 'register'; loginError = ''" class="text-brand-600 font-bold hover:underline">Đăng ký ngay</button>
+                </p>
+
+                <!-- Quick Demo Accounts -->
+                <div class="mt-6 pt-5 border-t border-slate-100">
+                    <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-3">Tài khoản Demo có sẵn (Click để điền nhanh)</span>
+                    <div class="space-y-2">
+                        <button type="button" @click="fillDemo('khanh@vlu.edu.vn')" class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 transition flex items-center justify-between text-xs group">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center">SV</span>
+                                <div class="text-left">
+                                    <p class="font-bold text-slate-800 group-hover:text-brand-700">Sinh viên (Quốc Khánh)</p>
+                                    <p class="text-slate-400 text-[11px]">khanh@vlu.edu.vn → student.html</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-600"></i>
+                        </button>
+
+                        <button type="button" @click="fillDemo('thuan@vlu.edu.vn')" class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 transition flex items-center justify-between text-xs group">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 font-bold flex items-center justify-center">NTD</span>
+                                <div class="text-left">
+                                    <p class="font-bold text-slate-800 group-hover:text-brand-700">Nhà tuyển dụng (Nexus Labs)</p>
+                                    <p class="text-slate-400 text-[11px]">thuan@vlu.edu.vn → employer.html</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-600"></i>
+                        </button>
+
+                        <button type="button" @click="fillDemo('admin@vlu.edu.vn')" class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 transition flex items-center justify-between text-xs group">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-bold flex items-center justify-center">AD</span>
+                                <div class="text-left">
+                                    <p class="font-bold text-slate-800 group-hover:text-brand-700">Quản trị viên (System Admin)</p>
+                                    <p class="text-slate-400 text-[11px]">admin@vlu.edu.vn → admin.html</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- REGISTER FORM -->
+        <template x-if="authMode === 'register'">
+            <div>
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Tạo tài khoản mới</h2>
+                    <p class="text-sm text-slate-500 mt-1">Tham gia cộng đồng việc làm sinh viên Orbit</p>
+                </div>
+
+                <form @submit.prevent="register()" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Bạn là ai?</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="button" @click="regRole = 'student'"
+                                    :class="regRole === 'student' ? 'border-brand-600 bg-brand-50/70 text-brand-800 ring-2 ring-brand-500/20' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'"
+                                    class="p-3 rounded-xl border text-left transition flex items-center space-x-2.5">
+                                <i class="fa-solid fa-user-graduate text-base" :class="regRole === 'student' ? 'text-brand-600' : 'text-slate-400'"></i>
+                                <div>
+                                    <p class="text-xs font-bold">Sinh viên</p>
+                                    <p class="text-[10px] opacity-75">Tìm việc & Thực tập</p>
+                                </div>
+                            </button>
+                            <button type="button" @click="regRole = 'employer'"
+                                    :class="regRole === 'employer' ? 'border-brand-600 bg-brand-50/70 text-brand-800 ring-2 ring-brand-500/20' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'"
+                                    class="p-3 rounded-xl border text-left transition flex items-center space-x-2.5">
+                                <i class="fa-solid fa-building text-base" :class="regRole === 'employer' ? 'text-brand-600' : 'text-slate-400'"></i>
+                                <div>
+                                    <p class="text-xs font-bold">Nhà tuyển dụng</p>
+                                    <p class="text-[10px] opacity-75">Đăng tin & Tuyển dụng</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5" x-text="regRole === 'student' ? 'Họ và tên sinh viên' : 'Tên người đại diện / Công ty'"></label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" x-model="regName" required :placeholder="regRole === 'student' ? 'Ví dụ: Nguyễn Văn A' : 'Ví dụ: Công ty TNHH Orbit'"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Email đăng ký</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="email" x-model="regEmail" required :placeholder="regRole === 'student' ? 'sinhvien@vlu.edu.vn' : 'hr@company.vn'"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <template x-if="regRole === 'student'">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Mã số sinh viên (MSV)</label>
+                            <div class="relative">
+                                <i class="fa-regular fa-id-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" x-model="regStudentId" required placeholder="Ví dụ: 2374802010..."
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Mật khẩu</label>
+                            <input type="password" x-model="regPassword" required placeholder="••••••••"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Nhập lại MK</label>
+                            <input type="password" x-model="regConfirmPassword" required placeholder="••••••••"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <div x-show="registerError" x-transition class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-2" x-cloak>
+                        <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
+                        <span x-text="registerError"></span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/20 transition flex items-center justify-center space-x-2 text-sm">
+                        <span>Đăng ký & Bắt đầu ngay</span>
+                        <i class="fa-solid fa-user-plus text-xs"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-xs text-slate-500 mt-5">
+                    Đã có tài khoản?
+                    <button type="button" @click="authMode = 'login'; registerError = ''" class="text-brand-600 font-bold hover:underline">Đăng nhập tại đây</button>
+                </p>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        function authApp() {
+            const defaultUsers = [
+                { email: 'khanh@vlu.edu.vn', role: 'student', name: 'Quốc Khánh', sub: 'ĐH Văn Lang', initials: 'QK' },
+                { email: 'thuan@vlu.edu.vn', role: 'employer', name: 'Minh Thuận', sub: 'Nexus Labs · NTD', initials: 'MT' },
+                { email: 'admin@vlu.edu.vn', role: 'admin', name: 'Quản trị viên', sub: 'System Admin', initials: 'AD' }
+            ];
+
+            return {
+                authMode: 'login',
+                loginEmail: '',
+                loginPassword: '',
+                loginError: '',
+                regRole: 'student',
+                regName: '',
+                regEmail: '',
+                regStudentId: '',
+                regPassword: '',
+                regConfirmPassword: '',
+                registerError: '',
+                registeredUsers: JSON.parse(localStorage.getItem('orbit_users')) || defaultUsers,
+
+                getInitials(name) {
+                    const parts = name.trim().split(' ').filter(Boolean);
+                    if (parts.length === 0) return 'US';
+                    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                },
+                fillDemo(email) {
+                    this.authMode = 'login';
+                    this.loginEmail = email;
+                    this.loginPassword = 'password123';
+                    this.loginError = '';
+                },
+                redirectByRole(user) {
+                    localStorage.setItem('orbit_current_user', JSON.stringify(user));
+                    if (user.role === 'student') window.location.href = 'student.html';
+                    else if (user.role === 'employer') window.location.href = 'employer.html';
+                    else if (user.role === 'admin') window.location.href = 'admin.html';
+                },
+                login() {
+                    const email = this.loginEmail.trim().toLowerCase();
+                    this.loginError = '';
+                    const foundUser = this.registeredUsers.find(u => u.email.toLowerCase() === email);
+                    if (foundUser) {
+                        this.redirectByRole(foundUser);
+                    } else {
+                        this.loginError = 'Tài khoản chưa tồn tại! Bạn có thể chọn "Đăng ký tài khoản" hoặc dùng các email demo bên dưới.';
+                    }
+                },
+                register() {
+                    this.registerError = '';
+                    const email = this.regEmail.trim().toLowerCase();
+                    const name = this.regName.trim();
+
+                    if (this.regPassword.length < 6) {
+                        this.registerError = 'Mật khẩu phải có ít nhất 6 ký tự!';
+                        return;
+                    }
+                    if (this.regPassword !== this.regConfirmPassword) {
+                        this.registerError = 'Mật khẩu xác nhận không khớp!';
+                        return;
+                    }
+                    if (this.registeredUsers.some(u => u.email.toLowerCase() === email)) {
+                        this.registerError = 'Email này đã được sử dụng! Vui lòng chuyển sang Đăng nhập.';
+                        return;
+                    }
+
+                    const newUser = {
+                        email: email,
+                        role: this.regRole,
+                        name: name,
+                        sub: this.regRole === 'student' ? `MSV: ${this.regStudentId || 'ĐH Văn Lang'}` : 'Nhà tuyển dụng',
+                        initials: this.getInitials(name)
+                    };
+
+                    this.registeredUsers.push(newUser);
+                    localStorage.setItem('orbit_users', JSON.stringify(this.registeredUsers));
+                    this.redirectByRole(newUser);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

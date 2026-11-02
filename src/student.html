@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Jobs - Không gian Sinh viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534',
+                            900: '#14532d', 950: '#064e3b',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased h-screen overflow-hidden flex" x-data="studentApp()" x-init="init()">
+
+    <!-- Toast Notification -->
+    <div x-show="notification.show" x-transition
+         class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm border border-slate-700" x-cloak>
+        <i class="fa-solid fa-circle-check text-brand-500 text-lg"></i>
+        <span x-text="notification.message"></span>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div x-show="previewModal.show" x-transition class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 relative shadow-2xl">
+            <button @click="previewModal.show = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-slate-900 mb-2" x-text="previewModal.title"></h3>
+            <p class="text-xs text-slate-500 mb-4" x-text="previewModal.subtitle"></p>
+            <div class="bg-slate-100 rounded-xl p-4 flex items-center justify-center h-64 border border-slate-200">
+                <div class="text-center">
+                    <i class="fa-solid fa-id-card text-5xl text-brand-600 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-700" x-text="previewModal.content"></p>
+                    <span class="inline-block mt-2 px-3 py-1 bg-brand-100 text-brand-800 text-xs rounded-full font-semibold">Đã tải lên rõ nét</span>
+                </div>
+            </div>
+            <div class="mt-5 flex justify-end space-x-3">
+                <button @click="previewModal.show = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-300">Đóng</button>
+                <button @click="notify('Đã gửi yêu cầu xác minh lại!'); previewModal.show = false;" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700">Cập nhật thẻ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-64 h-full bg-brand-950 text-white flex flex-col justify-between shrink-0 select-none shadow-xl border-r border-brand-900/40">
+        <div class="overflow-y-auto">
+            <div class="px-6 py-6 flex items-center space-x-3 border-b border-brand-900/50">
+                <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-md">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-white">Jobs</span>
+                    <span class="block text-[10px] text-brand-400 tracking-wider font-semibold uppercase">Student Portal</span>
+                </div>
+            </div>
+
+            <div class="px-6 pt-6 pb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-400">Không gian Sinh viên</span>
+            </div>
+
+            <nav class="px-3 space-y-1">
+                <button @click="activeTab = 'explore'" :class="activeTab === 'explore' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-compass w-5 text-center"></i>
+                    <span>Khám phá</span>
+                </button>
+                <button @click="activeTab = 'jobs'" :class="activeTab === 'jobs' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-briefcase w-5 text-center"></i>
+                    <span>Việc làm</span>
+                </button>
+                <button @click="activeTab = 'applications'" :class="activeTab === 'applications' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-file-lines w-5 text-center"></i>
+                    <span>Ứng tuyển</span>
+                    <span class="ml-auto bg-brand-500 text-slate-950 text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+                </button>
+                <button @click="activeTab = 'profile'" :class="activeTab === 'profile' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-user w-5 text-center"></i>
+                    <span>Hồ sơ</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-brand-900/60 bg-brand-950 shrink-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center font-bold text-white text-sm shadow shrink-0">
+                        <span x-text="currentUser.initials"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-white truncate" x-text="currentUser.name"></p>
+                        <p class="text-xs text-brand-200/80 truncate" x-text="currentUser.email"></p>
+                    </div>
+                </div>
+                <button @click="logout()" title="Đăng xuất" class="text-white/80 hover:text-rose-400 p-2 rounded-lg hover:bg-brand-900/50 transition shrink-0">
+                    <i class="fa-solid fa-right-from-bracket text-base"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <!-- TOP HEADER -->
+        <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 shadow-sm">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider" x-text="currentLoginTime"></p>
+                <h1 class="text-lg font-bold text-slate-900" x-text="getHeaderTitle()"></h1>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center space-x-2 bg-brand-50 border border-brand-200 px-3.5 py-1.5 rounded-xl text-xs font-bold text-brand-800">
+                    <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                    <span>Sinh viên</span>
+                </div>
+
+                <button @click="notify('Không có thông báo mới')" class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-brand-600 rounded-full"></span>
+                </button>
+
+                <div class="w-10 h-10 rounded-full bg-amber-200 border border-amber-300 flex items-center justify-center font-bold text-amber-900 text-sm shadow-sm">
+                    <span x-text="currentUser.initials"></span>
+                </div>
+
+                <button @click="logout()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200 hover:border-rose-200">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden md:inline">Đăng xuất</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- DYNAMIC BODY CONTENT -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- 1. KHÁM PHÁ -->
+            <template x-if="activeTab === 'explore'">
+                <div class="space-y-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900" x-text="`Chào buổi sáng, ${currentUser.name}!`"></h2>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-brand-900 via-brand-800 to-brand-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl flex flex-col lg:flex-row items-center justify-between">
+                        <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-center">
+                            <i class="fa-solid fa-graduation-cap text-9xl"></i>
+                        </div>
+                        <div class="max-w-xl z-10">
+                            <div class="inline-flex items-center space-x-2 bg-brand-700/50 px-3 py-1 rounded-full text-xs font-semibold mb-4 text-brand-100 border border-brand-600">
+                                <i class="fa-solid fa-sparkles"></i>
+                                <span>CƠ HỘI DÀNH RIÊNG CHO BẠN</span>
+                            </div>
+                            <h3 class="text-3xl lg:text-4xl font-extrabold tracking-tight mb-3">Bắt đầu sự nghiệp theo cách của bạn.</h3>
+                            <p class="text-brand-100 text-sm leading-relaxed mb-6">Khám phá cơ hội thực tập và việc làm phù hợp với kỹ năng, sở thích và mục tiêu của bạn.</p>
+                            <div class="inline-flex items-center space-x-2 bg-white/10 backdrop-blur px-4 py-2 rounded-xl text-xs font-medium border border-white/20">
+                                <i class="fa-solid fa-briefcase text-brand-400"></i>
+                                <span>2.400+ cơ hội việc làm sẵn sàng</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 lg:mt-0 bg-white text-slate-900 p-5 rounded-2xl shadow-2xl z-10 w-full lg:w-72 border border-slate-100 flex items-center space-x-4">
+                            <div class="relative w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center font-bold text-brand-800 text-lg">
+                                96%
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-brand-600 block uppercase tracking-wide">Độ phù hợp</span>
+                                <h4 class="text-sm font-bold text-slate-900">Hồ sơ tối ưu</h4>
+                                <p class="text-xs text-slate-500 mt-0.5">Dựa trên kỹ năng Figma & UI/UX</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <div class="md:col-span-6 flex items-center space-x-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            <input type="text" x-model="searchQuery" placeholder="Vị trí, kỹ năng hoặc công ty" class="w-full bg-transparent text-sm focus:outline-none text-slate-800">
+                        </div>
+                        <div class="md:col-span-4 flex items-center space-x-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-location-dot text-slate-400"></i>
+                            <input type="text" value="Hồ Chí Minh" class="w-full bg-transparent text-sm focus:outline-none text-slate-800">
+                        </div>
+                        <div class="md:col-span-2">
+                            <button @click="notify('Đang tìm kiếm việc làm phù hợp...')" class="w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-sm shadow-md">
+                                <span>Tìm việc ngay</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">KHÁM PHÁ THEO LĨNH VỰC</span>
+                                <h3 class="text-xl font-bold text-slate-900">Ngành nghề nổi bật</h3>
+                            </div>
+                            <button @click="activeTab = 'jobs'" class="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center space-x-1">
+                                <span>Xem tất cả</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div @click="activeTab = 'jobs'" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-brand-500 hover:shadow-lg transition cursor-pointer group">
+                                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-brand-100 group-hover:text-brand-700 transition">
+                                    <i class="fa-solid fa-pen-nib"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 mb-1">Thiết kế</h4>
+                                <p class="text-xs text-slate-500">248 việc làm</p>
+                            </div>
+                            <div @click="activeTab = 'jobs'" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-brand-500 hover:shadow-lg transition cursor-pointer group">
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-brand-100 group-hover:text-brand-700 transition">
+                                    <i class="fa-solid fa-code"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 mb-1">Công nghệ</h4>
+                                <p class="text-xs text-slate-500">512 việc làm</p>
+                            </div>
+                            <div @click="activeTab = 'jobs'" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-brand-500 hover:shadow-lg transition cursor-pointer group">
+                                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-brand-100 group-hover:text-brand-700 transition">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 mb-1">Marketing</h4>
+                                <p class="text-xs text-slate-500">326 việc làm</p>
+                            </div>
+                            <div @click="activeTab = 'jobs'" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-brand-500 hover:shadow-lg transition cursor-pointer group">
+                                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg mb-4 group-hover:bg-brand-100 group-hover:text-brand-700 transition">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 mb-1">Tài chính</h4>
+                                <p class="text-xs text-slate-500">184 việc làm</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Jobs -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">GỢI Ý HÔM NAY</span>
+                                <h3 class="text-xl font-bold text-slate-900">Dành riêng cho bạn</h3>
+                            </div>
+                            <span class="bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">3 kết quả</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg">N</div>
+                                        <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">96% phù hợp</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-medium">Nexus Labs</span>
+                                    <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Product Design Intern</h4>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Hồ Chí Minh</span>
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Hybrid</span>
+                                        <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">6–8 triệu</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 pt-3 border-t border-slate-100">
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Figma</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">UI/UX</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">3 tháng</span>
+                                    </div>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> 2 giờ trước</span>
+                                    <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center font-bold text-lg">S</div>
+                                        <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">91% phù hợp</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-medium">Serein Studio</span>
+                                    <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Frontend Developer Intern</h4>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Hà Nội</span>
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Remote</span>
+                                        <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">7–10 triệu</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 pt-3 border-t border-slate-100">
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">React</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">TypeScript</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Part-time</span>
+                                    </div>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> 5 giờ trước</span>
+                                    <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center font-bold text-lg">A</div>
+                                        <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">88% phù hợp</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-medium">Aster Finance</span>
+                                    <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Marketing Trainee</h4>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Đà Nẵng</span>
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">On-site</span>
+                                        <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">5–7 triệu</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 pt-3 border-t border-slate-100">
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Content</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Social</span>
+                                        <span class="text-[11px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Fresher</span>
+                                    </div>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> Hôm qua</span>
+                                    <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 2. VIỆC LÀM -->
+            <template x-if="activeTab === 'jobs'">
+                <div class="space-y-8">
+                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-brand-200/60 rounded-3xl p-8">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-700 block mb-1">CƠ HỘI MỚI NHẤT</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900 mb-2">Tìm công việc phù hợp</h2>
+                        <p class="text-slate-600 text-sm">Được tuyển chọn dựa trên hồ sơ và mục tiêu nghề nghiệp của bạn.</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+                        <div class="flex items-center space-x-3 flex-1 min-w-[280px] bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            <input type="text" placeholder="Tìm kiếm theo tiêu đề công việc hoặc kỹ năng..." class="w-full bg-transparent text-sm focus:outline-none">
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <select class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none">
+                                <option>Tất cả địa điểm</option>
+                                <option>Hồ Chí Minh</option>
+                                <option>Hà Nội</option>
+                                <option>Đà Nẵng</option>
+                            </select>
+                            <select class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none">
+                                <option>Mức lương</option>
+                                <option>Dưới 5 triệu</option>
+                                <option>5 - 10 triệu</option>
+                                <option>Trên 10 triệu</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg">N</div>
+                                    <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">96% phù hợp</span>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Nexus Labs</span>
+                                <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Product Design Intern</h4>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Hồ Chí Minh</span>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Hybrid</span>
+                                    <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">6–8 triệu</span>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> 2 giờ trước</span>
+                                <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center font-bold text-lg">S</div>
+                                    <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">91% phù hợp</span>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Serein Studio</span>
+                                <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Frontend Developer Intern</h4>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Hà Nội</span>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Remote</span>
+                                    <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">7–10 triệu</span>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> 5 giờ trước</span>
+                                <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center font-bold text-lg">A</div>
+                                    <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">88% phù hợp</span>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Aster Finance</span>
+                                <h4 class="text-lg font-bold text-slate-900 mt-1 mb-3">Marketing Trainee</h4>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-location-dot mr-1"></i> Đà Nẵng</span>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">On-site</span>
+                                    <span class="text-xs bg-brand-50 text-brand-700 font-medium px-2.5 py-1 rounded-lg">5–7 triệu</span>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> Hôm qua</span>
+                                <button @click="notify('Đã gửi hồ sơ ứng tuyển thành công!')" class="bg-brand-500 hover:bg-brand-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition">Ứng tuyển ngay</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 3. ỨNG TUYỂN -->
+            <template x-if="activeTab === 'applications'">
+                <div class="space-y-8">
+                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-brand-200/60 rounded-3xl p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-700 block mb-1">THEO DÕI HÀNH TRÌNH</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900 mb-2">Đơn ứng tuyển</h2>
+                            <p class="text-slate-600 text-sm">Theo dõi trạng thái phản hồi từ các nhà tuyển dụng.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full md:w-80">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-slate-700">Hồ sơ hoàn thiện</span>
+                                <span class="text-xs font-extrabold text-brand-600">82%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-brand-600 h-full rounded-full" style="width: 82%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+                        <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-lg shrink-0">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">Product Design Intern</h4>
+                                    <p class="text-xs text-slate-500 mt-0.5">Nexus Labs</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Chờ duyệt</span>
+                                <span class="text-xs text-slate-400 font-medium">26/05/2025</span>
+                                <button @click="notify('Đang xem chi tiết đơn ứng tuyển...')" class="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-lg shrink-0">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">UX Research Intern</h4>
+                                    <p class="text-xs text-slate-500 mt-0.5">Kite Studio</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Đã duyệt</span>
+                                <span class="text-xs text-slate-400 font-medium">28/05/2025</span>
+                                <button @click="notify('Đang xem chi tiết đơn ứng tuyển...')" class="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-lg shrink-0">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">Marketing Trainee</h4>
+                                    <p class="text-xs text-slate-500 mt-0.5">Aster Finance</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">Hoàn thành</span>
+                                <span class="text-xs text-slate-400 font-medium">20/05/2025</span>
+                                <button @click="notify('Mở form đánh giá nhà tuyển dụng')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition shadow-sm">Đánh giá NTD</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 4. HỒ SƠ -->
+            <template x-if="activeTab === 'profile'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">HỒ SƠ CÁ NHÂN</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Hồ sơ sinh viên</h2>
+                            <p class="text-slate-600 text-sm">Thông tin đầy đủ giúp bạn tạo dựng niềm tin trong cộng đồng.</p>
+                        </div>
+                        <button @click="notify('Đã lưu thay đổi hồ sơ thành công!')" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition">Lưu thay đổi</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div class="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-6">
+                            <div class="w-32 h-32 rounded-3xl bg-amber-600 text-white flex items-center justify-center font-bold text-4xl mx-auto shadow-md" x-text="currentUser.initials"></div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900" x-text="currentUser.name"></h3>
+                                <span class="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mt-2">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>Đã xác minh</span>
+                                </span>
+                            </div>
+                            <div class="py-4 border-y border-slate-100 flex items-center justify-center space-x-2 text-amber-500 font-bold">
+                                <i class="fa-solid fa-star"></i>
+                                <span class="text-lg text-slate-900">4.9</span>
+                                <span class="text-xs text-slate-400 font-normal">(28 đánh giá)</span>
+                            </div>
+                            <button @click="notify('Tải ảnh đại diện mới thành công!')" class="w-full py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition">Thay ảnh đại diện</button>
+                        </div>
+
+                        <div class="lg:col-span-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Họ và tên</label>
+                                    <input type="text" x-model="currentUser.name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Email</label>
+                                    <input type="email" x-model="currentUser.email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mã sinh viên</label>
+                                    <input type="text" value="11223344" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Khung giờ rảnh</label>
+                                    <input type="text" value="18:00 – 22:00, Thứ 2–6" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                            </div>
+
+                            <div class="pt-6 border-t border-slate-100">
+                                <h4 class="font-bold text-slate-900 mb-1">Xác minh Thẻ sinh viên</h4>
+                                <p class="text-xs text-slate-500 mb-4">Tải ảnh rõ nét cả bốn góc thẻ. Hỗ trợ JPG, PNG tối đa 5 MB.</p>
+                                <div @click="openPreview('Thẻ sinh viên ' + currentUser.name, 'Trường Đại học Văn Lang', 'Hình ảnh thẻ sinh viên đã được tải lên')" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-brand-500 transition cursor-pointer bg-slate-50/50">
+                                    <i class="fa-regular fa-file-image text-3xl text-brand-600 mb-2"></i>
+                                    <p class="text-sm font-bold text-slate-700">THẺ SINH VIÊN</p>
+                                    <span class="text-xs text-slate-400">Đã có ảnh (Bấm để xem)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </main>
+    </div>
+
+    <script>
+        function studentApp() {
+            return {
+                activeTab: 'explore',
+                searchQuery: '',
+                currentLoginTime: '',
+                currentUser: { name: 'Quốc Khánh', sub: 'ĐH Văn Lang', email: 'khanh@vlu.edu.vn', initials: 'QK' },
+                notification: { show: false, message: '' },
+                previewModal: { show: false, title: '', subtitle: '', content: '' },
+
+                init() {
+                    const saved = localStorage.getItem('orbit_current_user');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.role === 'student') this.currentUser = parsed;
+                    }
+                    const now = new Date();
+                    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                    this.currentLoginTime = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} - ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+                },
+                getHeaderTitle() {
+                    const titles = { explore: 'Khám phá', jobs: 'Việc làm', applications: 'Ứng tuyển', profile: 'Hồ sơ' };
+                    return titles[this.activeTab] || 'Orbit Jobs';
+                },
+                notify(msg) {
+                    this.notification.message = msg;
+                    this.notification.show = true;
+                    setTimeout(() => { this.notification.show = false; }, 3000);
+                },
+                openPreview(title, subtitle, content) {
+                    this.previewModal = { show: true, title, subtitle, content };
+                },
+                logout() {
+                    localStorage.removeItem('orbit_current_user');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

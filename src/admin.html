@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Jobs - Quản trị hệ thống</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534',
+                            900: '#14532d', 950: '#064e3b',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased h-screen overflow-hidden flex" x-data="adminApp()" x-init="init()">
+
+    <!-- Toast Notification -->
+    <div x-show="notification.show" x-transition
+         class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm border border-slate-700" x-cloak>
+        <i class="fa-solid fa-circle-check text-brand-500 text-lg"></i>
+        <span x-text="notification.message"></span>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div x-show="previewModal.show" x-transition class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 relative shadow-2xl">
+            <button @click="previewModal.show = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-slate-900 mb-2" x-text="previewModal.title"></h3>
+            <p class="text-xs text-slate-500 mb-4" x-text="previewModal.subtitle"></p>
+            <div class="bg-slate-100 rounded-xl p-4 flex items-center justify-center h-64 border border-slate-200">
+                <div class="text-center">
+                    <i class="fa-solid fa-id-card text-5xl text-brand-600 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-700" x-text="previewModal.content"></p>
+                    <span class="inline-block mt-2 px-3 py-1 bg-brand-100 text-brand-800 text-xs rounded-full font-semibold">Đã tải lên rõ nét</span>
+                </div>
+            </div>
+            <div class="mt-5 flex justify-end space-x-3">
+                <button @click="previewModal.show = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-300">Đóng</button>
+                <button @click="notify('Xác minh tài khoản thành công!'); previewModal.show = false;" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700">Xác minh ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-64 h-full bg-brand-950 text-white flex flex-col justify-between shrink-0 select-none shadow-xl border-r border-brand-900/40">
+        <div class="overflow-y-auto">
+            <div class="px-6 py-6 flex items-center space-x-3 border-b border-brand-900/50">
+                <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-md">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-white">Jobs</span>
+                    <span class="block text-[10px] text-brand-400 tracking-wider font-semibold uppercase">Admin Console</span>
+                </div>
+            </div>
+
+            <div class="px-6 pt-6 pb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-400">Quản trị Hệ thống</span>
+            </div>
+
+            <nav class="px-3 space-y-1">
+                <button @click="activeTab = 'admin_dashboard'" :class="activeTab === 'admin_dashboard' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-gauge w-5 text-center"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button @click="activeTab = 'admin_accounts'" :class="activeTab === 'admin_accounts' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-user-shield w-5 text-center"></i>
+                    <span>Tài khoản</span>
+                </button>
+                <button @click="activeTab = 'admin_moderation'" :class="activeTab === 'admin_moderation' ? 'bg-brand-900 text-white shadow-inner font-semibold' : 'text-slate-300 hover:bg-brand-900/50 hover:text-white'" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition text-sm">
+                    <i class="fa-solid fa-shield-halved w-5 text-center"></i>
+                    <span>Kiểm duyệt</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-brand-900/60 bg-brand-950 shrink-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center font-bold text-white text-sm shadow shrink-0">
+                        <span x-text="currentUser.initials"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-white truncate" x-text="currentUser.name"></p>
+                        <p class="text-xs text-brand-200/80 truncate" x-text="currentUser.email"></p>
+                    </div>
+                </div>
+                <button @click="logout()" title="Đăng xuất" class="text-white/80 hover:text-rose-400 p-2 rounded-lg hover:bg-brand-900/50 transition shrink-0">
+                    <i class="fa-solid fa-right-from-bracket text-base"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <!-- TOP HEADER -->
+        <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 shadow-sm">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider" x-text="currentLoginTime"></p>
+                <h1 class="text-lg font-bold text-slate-900" x-text="getHeaderTitle()"></h1>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center space-x-2 bg-purple-50 border border-purple-200 px-3.5 py-1.5 rounded-xl text-xs font-bold text-purple-800">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                    <span>Quản trị viên</span>
+                </div>
+
+                <button @click="notify('Không có thông báo mới')" class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition relative">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-brand-600 rounded-full"></span>
+                </button>
+
+                <div class="w-10 h-10 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center font-bold text-purple-900 text-sm shadow-sm">
+                    <span x-text="currentUser.initials"></span>
+                </div>
+
+                <button @click="logout()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200 hover:border-rose-200">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden md:inline">Đăng xuất</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- DYNAMIC BODY CONTENT -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- 1. DASHBOARD -->
+            <template x-if="activeTab === 'admin_dashboard'">
+                <div class="space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">QUẢN TRỊ HỆ THỐNG</span>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Dashboard</h2>
+                            <p class="text-slate-600 text-sm">Tổng quan hoạt động của nền tảng Orbit.</p>
+                        </div>
+                        <button @click="notify('Đã xuất báo cáo hệ thống thành công!')" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl text-sm shadow-md transition">Xuất báo cáo</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Sinh viên</span>
+                                <h3 class="text-3xl font-black text-slate-900 mt-1">2.486</h3>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+12%</span>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Nhà tuyển dụng</span>
+                                <h3 class="text-3xl font-black text-slate-900 mt-1">318</h3>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+10%</span>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Bài đăng</span>
+                                <h3 class="text-3xl font-black text-slate-900 mt-1">624</h3>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+8%</span>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Chờ xác minh</span>
+                                <h3 class="text-3xl font-black text-slate-900 mt-1">94</h3>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+6%</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div class="lg:col-span-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-slate-900">Tăng trưởng người dùng</h3>
+                                <span class="text-xs font-medium text-slate-400">30 ngày qua</span>
+                            </div>
+                            <div class="h-64 flex items-end justify-between gap-3 pt-8 px-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[40%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[55%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[50%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[70%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[60%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[80%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[85%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[75%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[90%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[82%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[95%]"></div>
+                                <div class="w-full bg-gradient-to-t from-brand-700 to-brand-500 rounded-t-lg h-[98%]"></div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                            <h3 class="text-lg font-bold text-slate-900">Hoạt động gần đây</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start space-x-3 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-brand-600 mt-2 shrink-0"></span>
+                                    <p class="text-slate-600">18 tài khoản mới hôm nay</p>
+                                </div>
+                                <div class="flex items-start space-x-3 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-brand-600 mt-2 shrink-0"></span>
+                                    <p class="text-slate-600">12 tin tuyển dụng được đăng</p>
+                                </div>
+                                <div class="flex items-start space-x-3 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-brand-600 mt-2 shrink-0"></span>
+                                    <p class="text-slate-600">8 sinh viên chờ xác minh</p>
+                                </div>
+                                <div class="flex items-start space-x-3 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-brand-600 mt-2 shrink-0"></span>
+                                    <p class="text-slate-600">3 báo cáo vi phạm mới</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 2. QUẢN LÝ TÀI KHOẢN -->
+            <template x-if="activeTab === 'admin_accounts'">
+                <div class="space-y-8">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">QUẢN TRỊ</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900">Quản lý tài khoản</h2>
+                        <p class="text-slate-600 text-sm">Kiểm soát chất lượng và an toàn cộng đồng.</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3 flex-1 min-w-[280px] bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            <input type="text" placeholder="Tìm theo tên hoặc email..." class="w-full bg-transparent text-sm focus:outline-none">
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <select class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none">
+                                <option>ROLE: Tất cả vai trò</option>
+                                <option>ROLE_STUDENT</option>
+                                <option>ROLE_EMPLOYER</option>
+                            </select>
+                            <span class="text-sm font-bold text-brand-700 bg-brand-50 px-3 py-2 rounded-xl">4 tài khoản</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 divide-y divide-slate-100">
+                        <div class="py-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-800 font-bold flex items-center justify-center">QU</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Quốc Khánh</h4>
+                                    <p class="text-xs text-slate-400">khanh@vlu.edu.vn · MSV 11223344</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="text-xs font-bold text-slate-500">ROLE_STUDENT</span>
+                                <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">VERIFIED</span>
+                                <button @click="notify('Đã khóa tài khoản')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold">Khóa tài khoản</button>
+                            </div>
+                        </div>
+
+                        <div class="py-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 font-bold flex items-center justify-center">NE</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Nexus Labs</h4>
+                                    <p class="text-xs text-slate-400">thuan@vlu.edu.vn</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="text-xs font-bold text-slate-500">ROLE_EMPLOYER</span>
+                                <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">ACTIVE</span>
+                                <button @click="notify('Đã khóa tài khoản')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold">Khóa tài khoản</button>
+                            </div>
+                        </div>
+
+                        <div class="py-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center">SE</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Serein Studio</h4>
+                                    <p class="text-xs text-slate-400">contact@serein.vn</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <span class="text-xs font-bold text-slate-500">ROLE_EMPLOYER</span>
+                                <span class="px-3 py-1 bg-rose-50 text-rose-700 rounded-full text-xs font-semibold">LOCKED</span>
+                                <button @click="notify('Đã mở khóa tài khoản')" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold">Mở khóa</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 3. KIỂM DUYỆT -->
+            <template x-if="activeTab === 'admin_moderation'">
+                <div class="space-y-8">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-brand-600 block mb-1">QUẢN TRỊ</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900">Duyệt xác minh</h2>
+                        <p class="text-slate-600 text-sm">Kiểm soát chất lượng và an toàn cộng đồng.</p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                        <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 font-bold flex items-center justify-center">TR</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Trần Gia Hân</h4>
+                                    <p class="text-xs text-slate-400">han@hcmut.edu.vn · MSV 22110456</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-xs font-bold text-slate-500">ROLE_STUDENT</span>
+                                <span class="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">PENDING</span>
+                                <button @click="openPreview('Thẻ sinh viên Trần Gia Hân', 'MSV: 22110456', 'Ảnh thẻ sinh viên đã được tải lên rõ nét')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">Xem thẻ SV</button>
+                                <button @click="notify('Đã xác minh thành công tài khoản!')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold">Xác minh</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </main>
+    </div>
+
+    <script>
+        function adminApp() {
+            return {
+                activeTab: 'admin_dashboard',
+                currentLoginTime: '',
+                currentUser: { name: 'Quản trị viên', sub: 'System Admin', email: 'admin@vlu.edu.vn', initials: 'AD' },
+                notification: { show: false, message: '' },
+                previewModal: { show: false, title: '', subtitle: '', content: '' },
+
+                init() {
+                    const saved = localStorage.getItem('orbit_current_user');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.role === 'admin') this.currentUser = parsed;
+                    }
+                    const now = new Date();
+                    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+                    this.currentLoginTime = `${days[now.getDay()]}, ${now.toLocaleDateString('vi-VN')} - ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+                },
+                getHeaderTitle() {
+                    const titles = {
+                        admin_dashboard: 'Dashboard',
+                        admin_accounts: 'Tài khoản',
+                        admin_moderation: 'Kiểm duyệt'
+                    };
+                    return titles[this.activeTab] || 'Orbit Jobs';
+                },
+                notify(msg) {
+                    this.notification.message = msg;
+                    this.notification.show = true;
+                    setTimeout(() => { this.notification.show = false; }, 3000);
+                },
+                openPreview(title, subtitle, content) {
+                    this.previewModal = { show: true, title, subtitle, content };
+                },
+                logout() {
+                    localStorage.removeItem('orbit_current_user');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
